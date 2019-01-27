@@ -1,0 +1,22 @@
+{% load static %}
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>This is Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static 'style.css' %}" />
+    <!-- <script src="main.js"></script> -->
+</head>
+<main>
+    <header>
+        <div id="logo"><span>M</span>ovies <span>S</span>craper </div>
+        <div id="search">
+            <form action="{% url 'film:film_details' %}" method="POST">
+                {% csrf_token %}
+                <input type="search" name="q"/>
+                <input type="submit" value="Search">
+            </form>
+        </div>
+    </header>
+</main>

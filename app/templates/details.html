@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>This is Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static 'style.css' %}" />
+    <!-- <script src="main.js"></script> -->
+</head>
+<body>
+    
+    <main>
+        <header>
+            <div id="logo"><span>M</span>ovies <span>S</span>craper </div>
+            <div id="search">
+                <form action="{% url 'film:film_details' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="search" name="q"/>
+                    <input type="submit" value="Search">
+                </form>
+            </div>
+        </header>
+        <!-- start basic data section
+            section contain
+                name
+                year
+                mpaa
+                length
+                poster
+                category
+        -->
+        <section id="basic-data">
+            <div class="poster">
+                <img src="{{poster}}" alt="poster of filmName">
+            </div>
+
+            <div class="text-data">
+                <div class="header">
+                    <div class="name">
+                        <h3>{{name}} <span>({{year}})</span>.</h3>
+                    </div>
+                    <div class="sub-data">
+                        <div class="mpaa">{{mpaa}}</div>
+                        <div class="length">{{length}}</div>
+                        <div class="category">
+                            {% for cat in category %} 
+                            <span>{{cat}}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="extra-data">
+                    <div>country: {{country| join:', '}}</div>
+                    <div>language: {{language| join:', '}}</div>
+                    <div>rating:
+                        {% for site, rate in rating.items %}
+                        <div class="sub-data" style="margin-left: 10px;">
+                            <span>{{site}}</span>
+                            <span>{{rate.rating}}/10</span>
+                            <span>{{rate.count}}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- end basic data section -->
+
+        <!-- start brief & trailer section -->
+        <section id="brief">
+            <div class="header">
+                <h3>{{name}} (brief)</h3>
+            </div>
+
+            <div class="content">
+                <div class="text-data">
+                    {% if brief_ar %}
+                    arab
+                    {{brief_ar}}
+                    {% else %}
+                    english
+                    {{brief_en}}
+                    {% endif %}
+                </div>
+                <div class="trailer">
+                    <video poster="{{trailer.img_src}}" preload="none" loop controls>
+                        <source src="{{trailer.video_src}}" type="video/mp4">
+                        <img src="{{trailer.img_src}}" />
+                        <p>Your browser doesn't support HTML5 video. Here is a <a href="myVideo.mp4">link to the video</a> instead.</p>
+                    </video>
+                    <p>imdb: <a href="{{trailer.link}}" target="_blank">Trailer Video on imdb</a></p>
+                </div>
+            </div>
+        </section>
+        <!-- end brief section -->
+
+        <!-- start cast section -->
+        <section id="cast">
+            <div class="header">
+                <h3>Cast</h3>
+            </div>
+
+            <div class="content">
+                {% for p in cast %}
+                <div>
+                    <img src="{{p.photo}}" alt="{{p.name}}">
+                    <div>
+                        <div class="name">
+                            <a href="{{p.imdb_link}}">{{p.name}}</a>
+                        </div>
+                        <div class="role">{{p.chracter}}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        <!-- end cast section -->
+
+        <!-- start download section -->
+        <section id="download">
+            <div class="header">
+                <h3>Download</h3>
+            </div>
+            <div class="tabs">
+                <span>Download</span>
+                <span>Torrent</span>
+                <span>Subtitle</span>
+            </div>
+
+            <div class="download-data">
+                {% for site, data in download.items %}
+                <br>
+                <hr>
+                {% for link, text in data.zipped %}
+                  <hr>
+                <div class="flex-box">
+                    <div class="name">
+                        <a href="{{link}}" target="_blank">{{site}}</a>
+                    </div>
+                    <div class="description">
+                        {{text}}
+                    </div>
+                    <!-- <div class="qualities">
+                        480p, 720p, 1080p
+                    </div>
+                    <div class="sizes">
+                        316mb, 700mb, 1.1gb
+                    </div>
+                    <div class="quality">
+                        bluray
+                    </div> -->
+                </div>
+                {% endfor %}
+                {% endfor %}
+            </div>
+            <div class="torrent-data">
+                
+            </div>
+            <div class="subtitle-data">
+                
+            </div>
+        </section>
+        <!-- end download section -->
+    </main>
+</body>
+</html>
