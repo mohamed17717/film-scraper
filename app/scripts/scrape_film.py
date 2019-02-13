@@ -1,10 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env	python3
+
 from requests import Session
 from urllib.parse import unquote as decode_url
 from bs4 import BeautifulSoup
 from re import findall, search, match
 from string import ascii_lowercase as ELetters
-
+import threading
+from time import sleep, time
 class Scraper:
 	"""
 	docstring for Scraper
@@ -34,7 +36,6 @@ class Scraper:
 		if self.src:
 			return BeautifulSoup(self.src, 'html.parser')
 		return BeautifulSoup('', 'html.parser')
-
 
 class ScrapeWebsite:
 	"""
@@ -119,7 +120,6 @@ class Wikipedia(ScrapeWebsite):
 		return {
 			'sites': self.external_sites(),
 		}
-
 class IMDB(ScrapeWebsite):
 	"""docstring for IMDB"""
 	def __init__(self):
@@ -268,7 +268,6 @@ class IMDB(ScrapeWebsite):
 			# 'prizes-won': self.prizes_won(),
 			# 'prizes-nomenee': self.prizes_nomenee(),
 		}
-
 class Yahoo(ScrapeWebsite):
 	"""docstring for Yahoo
 		scrape from yahoo accroding to its structure
@@ -341,10 +340,10 @@ class Yahoo(ScrapeWebsite):
 
 	def sites(self):
 		## contain links to wiki imdb rotten-tomato		
-		ulElms = self.soup.select('> ul')
+		ulElms = self.soup.select('ul')
 		sites  = {}
 		## i wanna last ul
-		ulElm_a = self.soup.select('> ul:nth-of-type(%i) li a[title]' % len(ulElms))
+		ulElm_a = self.soup.select('ul:nth-of-type(%i) li a[title]' % len(ulElms))
 		[sites.update({
 				a['title'].lower(): self.extract_redirect_link_yahoo(a['href'])
 			}) for a in ulElm_a]
@@ -418,13 +417,13 @@ class Yahoo(ScrapeWebsite):
 			self.soup  = soup.select('div#left div#main div#web > ol > li')
 			
 			return {'extra-sites': self.leftAreaData()}
-
 class Download(ScrapeWebsite):
 	"""docstring for Download"""
 	def __init__(self, FilmInformation):
 		super(Download, self).__init__()
 
 		self.FilmInformation = FilmInformation
+		self.data = {}
 		self.websites = {
 			'egybest': {
 				'url': 'https://egy.best',
@@ -782,44 +781,52 @@ class Download(ScrapeWebsite):
 					cleaned += (result, )
 		return cleaned
 
+	def __searchHelper__(self, name, site):
+		## build search url
+		query = ' '.join([self.FilmInformation[i] for i in site['search']['search_query']])
+		search_url = site['url'] + site['search']['link'] % query
+		## scrape it
+		soup = self.get_soup(search_url)
+		## get search results
+		results = soup.select( site['search']['selector'] )
+		## clean the results get matched
+		results = self.clean_not_matched(results)
+
+		if results:
+			## extract url and text
+			urls = []
+			txts = []
+			for elm in results:
+				# txts.append(elm.text)
+				txts.append( self.clean_spaces( elm.text ) )
+				if elm.name != 'a':
+					elm = elm.a
+				url = elm.get('href') or ''
+				url = (url.startswith('/') and site['url'] + url) or url
+				urls.append( url )
+
+			## update my data
+			site['search']['return'].update({
+				'film_url': urls,
+				'search_text': txts,
+				'zipped': list(zip(urls, txts))
+			})
+			self.data[name] = site['search']['return']
+
 	def search(self,websites=None):
 		# filmName = self.FilmInformation.get('user-query')
-		info = self.FilmInformation
 		## can't put default using self
 		websites = websites or self.websites
-
-		data = {}
 		for name, site in websites.items():
-			## build search url
-			query = ' '.join([info[i] for i in site['search']['search_query']])
-			search_url = site['url'] + site['search']['link'] % query
-			## scrape it
-			soup = self.get_soup(search_url)
-			## get search results
-			results = soup.select( site['search']['selector'] )
-			## clean the results get matched
-			results = self.clean_not_matched(results)
-			if results:
-				## extract url and text
-				urls = []
-				txts = []
-				for elm in results:
-					# txts.append(elm.text)
-					txts.append( self.clean_spaces( elm.text ) )
-					if elm.name != 'a':
-						elm = elm.a
-					url = elm.get('href') or ''
-					url = (url.startswith('/') and site['url'] + url) or url
-					urls.append( url )
+			thread = threading.Thread(target=self.__searchHelper__, args=(name, site))
+			thread.daemon = 1
+			thread.setName(name)
+			thread.start()
+		while len(threading.enumerate()) > 1 and len(self.data) < 5:
+			sleep(0.5)
 
-				## update my data
-				site['search']['return'].update({
-					'film_url': urls,
-					'search_text': txts,
-					'zipped': list(zip(urls, txts))
-				})
-				data[name] = site['search']['return']
-		return data
+		return self.data
+
 
 class Film:
 	"""
@@ -896,6 +903,13 @@ class Film:
 
 		return self.info
 
+
+# if __name__ == '__main__':
+# 	filmName = 'fight club'
+# 	film = Film(filmName)
+# 	film.build()
+# 	from pprint import pprint
+# 	pprint(film.info)
 
 # f = Film('aquaman')
 # f.build()
