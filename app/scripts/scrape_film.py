@@ -7,6 +7,7 @@ from re import findall, search, match
 from string import ascii_lowercase as ELetters
 import threading
 from time import sleep, time
+
 class Scraper:
 	"""
 	docstring for Scraper
@@ -120,6 +121,7 @@ class Wikipedia(ScrapeWebsite):
 		return {
 			'sites': self.external_sites(),
 		}
+
 class IMDB(ScrapeWebsite):
 	"""docstring for IMDB"""
 	def __init__(self):
@@ -268,6 +270,7 @@ class IMDB(ScrapeWebsite):
 			# 'prizes-won': self.prizes_won(),
 			# 'prizes-nomenee': self.prizes_nomenee(),
 		}
+
 class Yahoo(ScrapeWebsite):
 	"""docstring for Yahoo
 		scrape from yahoo accroding to its structure
@@ -417,6 +420,7 @@ class Yahoo(ScrapeWebsite):
 			self.soup  = soup.select('div#left div#main div#web > ol > li')
 			
 			return {'extra-sites': self.leftAreaData()}
+
 class Download(ScrapeWebsite):
 	"""docstring for Download"""
 	def __init__(self, FilmInformation):
@@ -819,11 +823,16 @@ class Download(ScrapeWebsite):
 		websites = websites or self.websites
 		for name, site in websites.items():
 			thread = threading.Thread(target=self.__searchHelper__, args=(name, site))
-			thread.daemon = 1
-			thread.setName(name)
+			# thread.daemon = 1
+			# thread.setName(name)
 			thread.start()
-		while len(threading.enumerate()) > 1 and len(self.data) < 5:
+		loop = 0
+		while (len(threading.enumerate()) > 1) and (len(self.data) < 5):
+			print(loop,len(threading.enumerate()), len(self.data))
+			if loop >= 10: break
 			sleep(0.5)
+			loop += 1
+
 
 		return self.data
 

@@ -8,7 +8,7 @@ class FilmInformation(models.Model):
     in other words data is not trusted it might be wrong '''
 
         ## film info
-    name     = models.CharField(max_length=70, unique= True)
+    name     = models.CharField(max_length=70)
     year     = models.CharField(max_length=4)
         ## all next can be null
     mpaa     = models.CharField(blank=True, null=True, max_length=20)
